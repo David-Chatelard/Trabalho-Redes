@@ -21,6 +21,7 @@ class R2ARST(IR2A):
         self.throughputs = []
         self.qi = []
         self.request_time = 0
+        self.has_waited = False
         # RST parameters
         self.msd = 0
         self.sft = 0
@@ -29,6 +30,7 @@ class R2ARST(IR2A):
         self.next_qi = 0
         self.e = 0
         self.y = 0
+        self.index = 0
         # Buffer parameters
         self.current_buffer = 0
         self.buffer_safety = 0
@@ -55,28 +57,73 @@ class R2ARST(IR2A):
         self.request_time = time.perf_counter()
 
         # Setting RST buffer parameters
-        self.buffer_min = 4
-        self.buffer_red = 8
-        self.buffer_saf = 16
+        self.buffer_minimum = 4
+        self.buffer_reduce = 8
+        self.buffer_safety = 16
 
-        # Setting other RST parameters
+        # Waits for buffer to reach safety level
+        if self.current_buffer < self.buffer_safety and not self.has_waited:
+            msg.add_quality_id(self.qi[self.current_qi])
+        else:
+            self.has_waited = True
+            # If it's the first segment
+            if len(self.whiteboard.get_playback_qi()) == 0:
+                self.current_qi = 0
+            # Get last segment qi
+            else:
+                self.current_qi = self.whiteboard.get_playback_qi()[-1][1]
 
-        selected_qi = self.qi[0]
-        for i in self.qi:
-            if avg > i:
-                selected_qi = i
+            # Setting other RST parameters
+            self.msd = msg.get_segment_size()
+            self.u = self.msd/self.sft
+            self.next_qi = self.current_qi + \
+                1 if self.current_qi != (len(self.qi) - 1) else self.current_qi
+            self.e = (self.qi[self.next_qi] -
+                      self.qi[self.current_qi]) / (self.qi[self.current_qi])
 
-        msg.add_quality_id(selected_qi)
+            self.index = self.current_qi
+
+            # Using RST algorithm
+            if self.current_buffer < self.buffer_minimum:
+                if self.u >= 1:
+                    self.index -= 1
+                else:
+                    for i in range(len(self.qi)):
+                        if self.qi[i] < self.qi[self.current_qi] * self.u:
+                            self.index = i
+
+            if self.u < self.y and self.current_buffer < self.buffer_reduce:
+                self.index -= 1
+
+            if self.u > (1 + self.e) and self.current_buffer > self.buffer_safety:
+                self.index += 1
+
+            # Validating index value
+            self.index = self.index if self.index < len(
+                self.qi) else len(self.qi) - 1
+            self.index = self.index if self.index > 0 else 0
+
+            msg.add_quality_id(self.qi[self.index])
 
         self.send_down(msg)
 
     def handle_segment_size_response(self, msg):
-        t = time.perf_counter() - self.request_time
-        self.throughputs.append(msg.get_bit_length() / t)
+        # Get the last buffer value
+        if self.whiteboard.get_playback_buffer_size():
+            self.current_buffer = self.whiteboard.get_playback_buffer_size(
+            )[-1][1]
+
+        # Get the segment fetch time
+        self.sft = time.perf_counter() - self.request_time
 
         self.send_up(msg)
 
     def initialize(self):
+        # Initializing values
+        self.y = 0.8
+        self.buffer_minimum = 5
+        self.buffer_reduce = 8
+        self.buffer_safety = 10
         pass
 
     def finalization(self):
