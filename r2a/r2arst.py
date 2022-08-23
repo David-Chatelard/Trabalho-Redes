@@ -29,13 +29,13 @@ class R2ARST(IR2A):
         self.current_qi = 0
         self.next_qi = 0
         self.e = 0
-        self.y = 0
+        self.y = 0.8
         self.index = 0
         # Buffer parameters
         self.current_buffer = 0
-        self.buffer_safety = 0
-        self.buffer_reduce = 0
-        self.buffer_minimum = 0
+        self.buffer_safety = 10
+        self.buffer_reduce = 8
+        self.buffer_minimum = 5
 
     def handle_xml_request(self, msg):
         # Get the time that the segment was requested
@@ -119,11 +119,6 @@ class R2ARST(IR2A):
         self.send_up(msg)
 
     def initialize(self):
-        # Initializing values
-        self.y = 0.8
-        self.buffer_minimum = 5
-        self.buffer_reduce = 8
-        self.buffer_safety = 10
         pass
 
     def finalization(self):
