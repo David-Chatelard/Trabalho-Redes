@@ -20,7 +20,6 @@ from statistics import mean
 class R2ARST(IR2A):
     def __init__(self, id):
         IR2A.__init__(self, id)
-        self.throughputs = []
         self.qi = []
         self.request_time = 0
         self.has_waited = False
@@ -35,7 +34,7 @@ class R2ARST(IR2A):
         self.index = 0
         # Buffer parameters
         self.current_buffer = 0
-        self.buffer_safety = 3
+        self.buffer_safety = 20
         self.buffer_reduce = 8
         self.buffer_minimum = 8
 
@@ -59,35 +58,35 @@ class R2ARST(IR2A):
         self.request_time = time.perf_counter()
 
         # Setting RST buffer parameters
-        self.buffer_safety = 3
-        self.buffer_reduce = 8
+        self.buffer_safety = 15
+        self.buffer_reduce = 10
         self.buffer_minimum = 8
 
         # Waits for buffer to reach safety level
-        if self.current_buffer < self.buffer_safety and not self.has_waited:
+        # if self.current_buffer < self.buffer_safety and not self.has_waited:
+        if self.current_buffer < self.buffer_safety:
             msg.add_quality_id(self.qi[self.current_qi])
         else:
             self.has_waited = True
             # If it's the first segment
             if len(self.whiteboard.get_playback_qi()) == 0:
                 self.current_qi = 0
-            # Get last segment qi
             else:
+                # Get last segment qi
                 self.current_qi = self.whiteboard.get_playback_qi()[-1][1]
 
             # Setting other RST parameters
             self.msd = msg.get_segment_size()
             self.u = self.msd / self.sft
             self.next_qi = (
-                self.current_qi + 1
-                if self.current_qi != (len(self.qi) - 1)
-                else self.current_qi
+                self.current_qi
+                if self.current_qi == len(self.qi) - 1
+                else self.current_qi + 1
             )
+
             self.e = (self.qi[self.next_qi] - self.qi[self.current_qi]) / (
                 self.qi[self.current_qi]
             )
-
-            # self.index = self.current_qi
 
             # Using RST algorithm
             if self.current_buffer < self.buffer_minimum:
@@ -105,6 +104,7 @@ class R2ARST(IR2A):
                 self.index -= 1
 
             if self.u > (1 + self.e) and self.current_buffer > self.buffer_safety:
+                print("#########AUMENTOUUUUUUUUUUUU")
                 self.index += 1
 
             # Validating index value
@@ -117,6 +117,7 @@ class R2ARST(IR2A):
             print(f"self.current_buffer = {self.current_buffer}")
             print(f"self.buffer_safety = {self.buffer_safety}")
             print(f"self.index = {self.index}")
+            print(f"self.current_buffer = {self.current_buffer}")
             print("=============================================")
 
             msg.add_quality_id(self.qi[self.index])
