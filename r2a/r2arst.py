@@ -8,6 +8,9 @@
     Implementacao utilizando o RST(Relative Smoothed Throughput)
 """
 
+# Link original para usar no JSON
+# "url_mpd": "http://45.171.101.167/DASHDataset/BigBuckBunny/1sec/BigBuckBunny_1s_simple_2014_05_09.mpd",
+
 from r2a.ir2a import IR2A
 from player.parser import *
 import time
@@ -15,7 +18,6 @@ from statistics import mean
 
 
 class R2ARST(IR2A):
-
     def __init__(self, id):
         IR2A.__init__(self, id)
         self.throughputs = []
@@ -29,13 +31,13 @@ class R2ARST(IR2A):
         self.current_qi = 0
         self.next_qi = 0
         self.e = 0
-        self.y = 0.8
+        self.y = 0.5
         self.index = 0
         # Buffer parameters
         self.current_buffer = 0
-        self.buffer_safety = 7
-        self.buffer_reduce = 5
-        self.buffer_minimum = 5
+        self.buffer_safety = 3
+        self.buffer_reduce = 8
+        self.buffer_minimum = 8
 
     def handle_xml_request(self, msg):
         # Get the time that the segment was requested
@@ -57,9 +59,9 @@ class R2ARST(IR2A):
         self.request_time = time.perf_counter()
 
         # Setting RST buffer parameters
-        self.buffer_minimum = 4
+        self.buffer_safety = 3
         self.buffer_reduce = 8
-        self.buffer_safety = 16
+        self.buffer_minimum = 8
 
         # Waits for buffer to reach safety level
         if self.current_buffer < self.buffer_safety and not self.has_waited:
@@ -75,33 +77,47 @@ class R2ARST(IR2A):
 
             # Setting other RST parameters
             self.msd = msg.get_segment_size()
-            self.u = self.msd/self.sft
-            self.next_qi = self.current_qi + \
-                1 if self.current_qi != (len(self.qi) - 1) else self.current_qi
-            self.e = (self.qi[self.next_qi] -
-                      self.qi[self.current_qi]) / (self.qi[self.current_qi])
+            self.u = self.msd / self.sft
+            self.next_qi = (
+                self.current_qi + 1
+                if self.current_qi != (len(self.qi) - 1)
+                else self.current_qi
+            )
+            self.e = (self.qi[self.next_qi] - self.qi[self.current_qi]) / (
+                self.qi[self.current_qi]
+            )
 
-            self.index = self.current_qi
+            # self.index = self.current_qi
 
             # Using RST algorithm
             if self.current_buffer < self.buffer_minimum:
                 if self.u >= 1:
+                    print("----------------DIMINUIUUUUUUUUUUUUUUUUU")
                     self.index -= 1
                 else:
                     for i in range(len(self.qi)):
                         if self.qi[i] < self.qi[self.current_qi] * self.u:
+                            print("@@@@@@@@@@@@@@DIMINUIUUUUUUUUUUUUUUUUU")
                             self.index = i
 
             if self.u < self.y and self.current_buffer < self.buffer_reduce:
+                print("#########DIMINUIUUUUUUUUUUUUUUUUU")
                 self.index -= 1
 
             if self.u > (1 + self.e) and self.current_buffer > self.buffer_safety:
                 self.index += 1
 
             # Validating index value
-            self.index = self.index if self.index < len(
-                self.qi) else len(self.qi) - 1
+            self.index = self.index if self.index < len(self.qi) else len(self.qi) - 1
             self.index = self.index if self.index > 0 else 0
+
+            print("=============================================")
+            print(f"self.e = {self.e}")
+            print(f"self.u = {self.u}")
+            print(f"self.current_buffer = {self.current_buffer}")
+            print(f"self.buffer_safety = {self.buffer_safety}")
+            print(f"self.index = {self.index}")
+            print("=============================================")
 
             msg.add_quality_id(self.qi[self.index])
 
@@ -110,8 +126,7 @@ class R2ARST(IR2A):
     def handle_segment_size_response(self, msg):
         # Get the last buffer value
         if self.whiteboard.get_playback_buffer_size():
-            self.current_buffer = self.whiteboard.get_playback_buffer_size(
-            )[-1][1]
+            self.current_buffer = self.whiteboard.get_playback_buffer_size()[-1][1]
 
         # Get the segment fetch time
         self.sft = time.perf_counter() - self.request_time
