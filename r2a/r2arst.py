@@ -10,6 +10,8 @@
 
 # Link original para usar no JSON
 # "url_mpd": "http://45.171.101.167/DASHDataset/BigBuckBunny/1sec/BigBuckBunny_1s_simple_2014_05_09.mpd",
+# Link para teste mais rapido
+#"url_mpd": "http://164.41.67.41/DASHDatasetTest/BigBuckBunny/1sec/BigBuckBunny_1s_simple_2014_05_09.mpd",
 
 from r2a.ir2a import IR2A
 from player.parser import *
@@ -64,7 +66,7 @@ class R2ARST(IR2A):
 
         # Waits for buffer to reach safety level
         # if self.current_buffer < self.buffer_safety and not self.has_waited:
-        if self.current_buffer < self.buffer_safety:
+        if self.current_buffer < self.buffer_safety and not self.has_waited:
             msg.add_quality_id(self.qi[self.current_qi])
         else:
             self.has_waited = True
