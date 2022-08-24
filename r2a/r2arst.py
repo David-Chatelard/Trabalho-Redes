@@ -34,8 +34,8 @@ class R2ARST(IR2A):
         self.index = 0
         # Buffer parameters
         self.current_buffer = 0
-        self.buffer_safety = 20
-        self.buffer_reduce = 8
+        self.buffer_safety = 15
+        self.buffer_reduce = 10
         self.buffer_minimum = 8
 
     def handle_xml_request(self, msg):
