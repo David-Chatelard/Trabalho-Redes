@@ -11,7 +11,7 @@
 # Link original para usar no JSON
 # "url_mpd": "http://45.171.101.167/DASHDataset/BigBuckBunny/1sec/BigBuckBunny_1s_simple_2014_05_09.mpd",
 # Link para teste mais rapido
-#"url_mpd": "http://164.41.67.41/DASHDatasetTest/BigBuckBunny/1sec/BigBuckBunny_1s_simple_2014_05_09.mpd",
+# "url_mpd": "http://164.41.67.41/DASHDatasetTest/BigBuckBunny/1sec/BigBuckBunny_1s_simple_2014_05_09.mpd",
 
 from r2a.ir2a import IR2A
 from player.parser import *
@@ -32,7 +32,7 @@ class R2ARST(IR2A):
         self.current_qi = 0
         self.next_qi = 0
         self.e = 0
-        self.y = 0.5
+        self.y = 1
         self.index = 0
         # Buffer parameters
         self.current_buffer = 0
@@ -101,11 +101,11 @@ class R2ARST(IR2A):
                             print("@@@@@@@@@@@@@@DIMINUIUUUUUUUUUUUUUUUUU")
                             self.index = i
 
-            if self.u < self.y and self.current_buffer < self.buffer_reduce:
+            elif self.u < self.y and self.current_buffer < self.buffer_reduce:
                 print("#########DIMINUIUUUUUUUUUUUUUUUUU")
                 self.index -= 1
 
-            if self.u > (1 + self.e) and self.current_buffer > self.buffer_safety:
+            elif self.u > (1 + self.e) and self.current_buffer > self.buffer_safety:
                 print("#########AUMENTOUUUUUUUUUUUU")
                 self.index += 1
 
@@ -113,16 +113,14 @@ class R2ARST(IR2A):
             self.index = self.index if self.index < len(self.qi) else len(self.qi) - 1
             self.index = self.index if self.index > 0 else 0
 
-            print("=============================================")
-            print(f"self.e = {self.e}")
-            print(f"self.u = {self.u}")
-            print(f"self.current_buffer = {self.current_buffer}")
-            print(f"self.buffer_safety = {self.buffer_safety}")
-            print(f"self.index = {self.index}")
-            print(f"self.current_buffer = {self.current_buffer}")
-            print("=============================================")
-
             msg.add_quality_id(self.qi[self.index])
+
+        print("=============================================")
+        print(f"1 + self.e = {1 + self.e}")
+        print(f"self.u = {self.u}")
+        print(f"self.current_buffer = {self.current_buffer}")
+        print(f"self.index = {self.index}")
+        print("=============================================")
 
         self.send_down(msg)
 
