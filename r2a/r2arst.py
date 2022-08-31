@@ -59,11 +59,6 @@ class R2ARST(IR2A):
     def handle_segment_size_request(self, msg):
         self.request_time = time.perf_counter()
 
-        # Setting RST buffer parameters
-        self.buffer_safety = 15
-        self.buffer_reduce = 10
-        self.buffer_minimum = 8
-
         # Waits for buffer to reach safety level
         # if self.current_buffer < self.buffer_safety and not self.has_waited:
         if self.current_buffer < self.buffer_safety and not self.has_waited:
@@ -120,6 +115,10 @@ class R2ARST(IR2A):
         print(f"self.u = {self.u}")
         print(f"self.current_buffer = {self.current_buffer}")
         print(f"self.index = {self.index}")
+        print("=============================================")
+        print(f"self.buffer_safety = {self.buffer_safety}")
+        print(f"self.buffer_reduce = {self.buffer_reduce}")
+        print(f"self.buffer_minimum = {self.buffer_minimum}")
         print("=============================================")
 
         self.send_down(msg)
