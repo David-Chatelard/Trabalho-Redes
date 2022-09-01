@@ -65,10 +65,8 @@ class R2ARST(IR2A):
             msg.add_quality_id(self.qi[self.current_qi])
         else:
             self.has_waited = True
-            # If it's the first segment
-            if len(self.whiteboard.get_playback_qi()) == 0:
-                self.current_qi = 0
-            else:
+            # If it's not the first segment
+            if len(self.whiteboard.get_playback_qi()) != 0:
                 # Get last segment qi
                 self.current_qi = self.whiteboard.get_playback_qi()[-1][1]
 
