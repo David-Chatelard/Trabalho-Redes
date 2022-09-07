@@ -16,7 +16,6 @@
 from r2a.ir2a import IR2A
 from player.parser import *
 import time
-from statistics import mean
 
 
 class R2ARST(IR2A):
